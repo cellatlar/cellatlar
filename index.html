@@ -171,6 +171,15 @@ details summary{cursor:pointer;margin-top:10px}details textarea{margin:8px 0}
 #pbar input{width:min(240px,34vw)}#pbar span{max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;color:var(--mut)}
 #pbar button{width:32px;height:32px;border-radius:50%;background:var(--glass2)}
 #dtabs button{padding:8px 4px!important;font-size:12.5px!important}
+#wp{position:absolute;inset:0 10px 10px 10px;border-radius:22px;overflow:hidden;background:#000;z-index:4;display:flex;flex-direction:column;border:1px solid var(--line)}
+#stage.wp #wp{right:calc(min(26vw,220px) + 20px)}
+#wpbar{display:flex;gap:8px;align-items:center;padding:6px 10px;background:#10121c;border-bottom:1px solid var(--line)}
+#wpbar b{font-size:13px;max-width:34%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#wpBody{flex:1;min-height:0;position:relative}#wpBody iframe,#wpBody>div{width:100%;height:100%;border:0;background:#000}
+#wpNote{padding:4px 10px;font-size:11.5px;background:#10121c}#wpNote:empty{display:none}
+#stage.wp.pip .rT{inset:auto;right:10px;top:0;width:min(26vw,220px);height:auto;aspect-ratio:4/3;z-index:6}
+#stage.wp.pip .lT{right:10px;bottom:auto;top:calc(min(26vw,220px)*.75 + 10px);width:min(26vw,220px);z-index:6;cursor:default}
+@media(max-width:700px){#wpbar label{display:none!important}}
 /* Modal */
 .modal{position:fixed;inset:0;background:#000a;z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(6px)}
 .modal .card{max-width:420px;width:100%;text-align:center;background:#12141d}
@@ -292,6 +301,12 @@ details summary{cursor:pointer;margin-top:10px}details textarea{margin:8px 0}
   <div id="caps" class="hidden"></div>
   <div id="emojis"></div>
   <canvas id="pfx"></canvas><div id="count" class="hidden"></div><div id="flash"></div>
+  <div id="wp" class="hidden"><div id="wpbar"><b id="wpTitle"></b><div style="flex:1"></div>
+   <label class="note" style="margin:0;display:flex;gap:4px;align-items:center"><input type="checkbox" id="wpDuck" checked>Konuşurken kıs</label>
+   <input type="range" id="wpVol" min="0" max="1" step=".05" value="1" style="width:80px" title="Video sesi">
+   <button class="btn sm hidden" id="wpLive" title="Canlı yayının en güncel anına atla">⏭ Canlıya</button><button class="btn sm" id="wpSync" title="İkimizi eşitle">🔄</button><button class="btn sm" id="wpExt" title="Yeni sekmede aç">↗</button><button class="btn sm" id="wpX" title="Kapat">✕</button></div>
+   <div id="wpBody"></div><div id="wpNote" class="note"></div>
+   <div id="wpAlt" class="hidden" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:6px 10px;background:#10121c;border-top:1px solid var(--line)"><span class="note">Site boş görünüyor ya da oynamıyorsa:</span><button class="btn sm" id="wpTab">🪟 Kendi sekmemde izle (yüzen pencereyle)</button><button class="btn sm" id="wpShareTab">🖥 Sekmeyi paylaş (ses dahil)</button></div></div>
   <div id="pbar" class="hidden"><button id="pPlay">⏸</button><input type="range" id="pSeek" min="0" max="1000" value="0"><span id="pName"></span><button id="pStop" title="Paylaşımı bitir">⏹</button></div>
  </div>
 
@@ -334,7 +349,10 @@ details summary{cursor:pointer;margin-top:10px}details textarea{margin:8px 0}
   </div>
 
   <div class="pane hidden" id="pane-fun">
-   <h5 style="margin-top:0">🎭 Ses değiştirici</h5><div class="chips" id="voiceChips"></div>
+   <h5 style="margin-top:0">🌐 Birlikte izle · ortak site</h5>
+   <div class="linkbox"><input type="text" id="wpUrl" placeholder="YouTube, video (.mp4/.webm) ya da site adresi"><button id="wpGo" title="İkimizde aç">▶</button></div>
+   <div class="note" style="margin:6px 0 4px">Herkes videoyu kendi cihazında oynatır, yalnızca oynat/duraklat/ileri-geri komutları eşitlenir. Gecikme yok denecek kadar azdır ve ses kendi cihazından gelir. Netflix gibi DRM'li siteler ve iframe'e izin vermeyen siteler açılmaz; onlar için ekran paylaş.</div>
+   <h5>🎭 Ses değiştirici</h5><div class="chips" id="voiceChips"></div>
    <h5>🔊 Ses tahtası (ikiniz de duyar)</h5><div class="fgrid" id="sndGrid"></div>
    <h5>🎆 Gösteri (ikiniz de görür)</h5><div class="fgrid" id="showGrid"></div>
    <h5>🎯 Karşıya fırlat!</h5><div class="fgrid" id="throwGrid"></div>
@@ -362,6 +380,10 @@ details summary{cursor:pointer;margin-top:10px}details textarea{margin:8px 0}
     <option value="smooth">🏃 Akıcı — 720p60 · 3 Mbps</option>
     <option value="eco">📉 Veri tasarrufu — 360p · 400 kbps</option>
    </select>
+   <label>Ekran paylaşım profili</label>
+   <select id="selShare"><option value="ultra">⚡ Ultra düşük gecikme — 720p60</option><option value="live">🎞 Video/oyun — 1080p60</option><option value="text">📄 Metin/slayt — keskin 30 fps</option></select>
+   <label>Video codec (iki taraf için)</label>
+   <select id="selCodec"><option value="auto">Otomatik</option><option value="H264">H.264 (donanım, genelde en düşük gecikme)</option><option value="VP8">VP8</option><option value="VP9">VP9</option><option value="AV1">AV1</option></select>
    <div class="chk"><input type="checkbox" id="ckLL" checked><label for="ckLL" style="margin:0;font-size:14px;color:var(--txt)">Minimum gecikme (jitter tamponu 0)</label></div>
    <div class="chk"><input type="checkbox" id="ckMirror" checked><label for="ckMirror" style="margin:0;font-size:14px;color:var(--txt)">Kendi görüntümü aynala</label></div>
    <div class="chk"><input type="checkbox" id="ckCover" checked><label for="ckCover" style="margin:0;font-size:14px;color:var(--txt)">Görüntüyü kutuya doldur (kırparak)</label></div>
@@ -390,7 +412,7 @@ details summary{cursor:pointer;margin-top:10px}details textarea{margin:8px 0}
 
 <script>
 'use strict';
-const $ = id => document.getElementById(id);
+const $ = id => document.getElementById(id) || window._pipDoc?.getElementById(id);
 const ICE = [{urls:['stun:stun.l.google.com:19302','stun:stun.cloudflare.com:3478']}];
 const store = {get:(k,d)=>{try{return localStorage.getItem(k)??d}catch{return d}}, set:(k,v)=>{try{localStorage.setItem(k,v)}catch{}}};
 const enc = s => new TextEncoder().encode(s);
@@ -549,13 +571,16 @@ async function pushVideo(){
   $('local').classList.toggle('mirror', $('ckMirror').checked && !screenStream);
   applyQuality();
 }
+const SHARE={ultra:{w:1280,h:720,fps:60,br:5e6,hint:'motion',deg:'maintain-framerate'}, live:{w:1920,h:1080,fps:60,br:8e6,hint:'motion',deg:'maintain-framerate'}, text:{w:1920,h:1080,fps:30,br:4e6,hint:'detail',deg:'maintain-resolution'}};
 async function applyQuality(){
-  const q = QUAL[$('selQ').value];
+  const q=QUAL[$('selQ').value], sp=fileEl?SHARE.live:SHARE[$('selShare').value];
   try{ await camTrack?.applyConstraints({width:{ideal:q.w},height:{ideal:q.h},frameRate:{ideal:q.fps}}); }catch{}
+  if (screenStream){ const vt=screenStream.getVideoTracks()[0]; try{ vt.contentHint=sp.hint; await vt.applyConstraints({frameRate:{ideal:sp.fps,max:sp.fps},width:{max:sp.w},height:{max:sp.h}}); }catch{} }
   if (!vSender) return;
-  const p = vSender.getParameters(); p.encodings = p.encodings?.length ? p.encodings : [{}];
-  p.encodings[0].maxBitrate = screenStream ? Math.max(q.br, 3e6) : q.br; p.encodings[0].maxFramerate = q.fps;
-  p.degradationPreference = screenStream ? 'maintain-resolution' : 'maintain-framerate';
+  const p=vSender.getParameters(); p.encodings=p.encodings?.length?p.encodings:[{}]; const e=p.encodings[0];
+  if (screenStream){ e.maxBitrate=sp.br; e.maxFramerate=sp.fps; p.degradationPreference=sp.deg; }
+  else { e.maxBitrate=q.br; e.maxFramerate=q.fps; p.degradationPreference='maintain-framerate'; }
+  try{ e.priority='high'; e.networkPriority='high'; }catch{}
   try{ await vSender.setParameters(p); }catch{}
 }
 
@@ -575,14 +600,10 @@ function makePC(){
     }
     remoteMain.addTrack(t);
     if (t.kind==='video'){ $('remote').srcObject = remoteMain; $('wait').classList.add('hidden'); }
-    if (t.kind==='audio'){ $('remote').srcObject = remoteMain; watch(t, l => $('tR').classList.toggle('speaking', l>.045 && peer.mic)); }
+    if (t.kind==='audio'){ $('remote').srcObject = remoteMain; watch(t, l => { const on=l>.045&&peer.mic; spk.peer=on; $('tR').classList.toggle('speaking',on); }); }
     tuneReceivers();
   };
-  pc.onnegotiationneeded = async () => {
-    if (!ready) return;
-    try{ makingOffer=true; await pc.setLocalDescription(); send({k:'sdp', d:{type:pc.localDescription.type, sdp:pc.localDescription.sdp}}); }
-    catch(e){ console.warn(e); } finally{ makingOffer=false; }
-  };
+  pc.onnegotiationneeded = renegotiate;
   pc.onconnectionstatechange = () => {
     const s=pc.connectionState;
     $('stText').textContent = {connected:'Bağlı', connecting:'Bağlanıyor…', disconnected:'Bağlantı koptu…', failed:'Bağlantı kurulamadı', closed:'Kapandı', new:'Hazır'}[s]||s;
@@ -598,6 +619,18 @@ function tuneReceivers(){
   const on=$('ckLL').checked;
   pc?.getReceivers().forEach(r=>{ try{ if('jitterBufferTarget' in r) r.jitterBufferTarget = on?0:null; }catch{} try{ if('playoutDelayHint' in r) r.playoutDelayHint = on?0:null; }catch{} });
 }
+const fixSdp = sdp => sdp.replace(/a=fmtp:(\d+) ([^\r\n]*useinbandfec=1[^\r\n]*)/g,(m,pt,f)=>/stereo=/.test(f)?m:`a=fmtp:${pt} ${f};stereo=1;sprop-stereo=1;maxaveragebitrate=96000`);
+async function renegotiate(){
+  if (!ready||!pc) return;
+  try{ makingOffer=true; const o=await pc.createOffer(); o.sdp=fixSdp(o.sdp); await pc.setLocalDescription(o); send({k:'sdp', d:{type:pc.localDescription.type, sdp:pc.localDescription.sdp}}); }
+  catch(e){ console.warn(e); } finally{ makingOffer=false; }
+}
+function applyCodec(pref){
+  const t=pc?.getTransceivers().find(x=>x.sender===vSender); if (!t?.setCodecPreferences) return;
+  const caps=RTCRtpSender.getCapabilities('video').codecs.filter(c=>!/red|ulpfec|flexfec/i.test(c.mimeType));
+  const re=new RegExp('/'+pref+'$','i'), list=pref==='auto'?caps:[...caps.filter(c=>re.test(c.mimeType)),...caps.filter(c=>!re.test(c.mimeType))];
+  try{ t.setCodecPreferences(list); renegotiate(); toast('Codec: '+(pref==='auto'?'otomatik':pref)); }catch(e){ toast('Bu codec seçilemedi'); }
+}
 const waitICE = () => new Promise(res=>{
   if (pc.iceGatheringState==='complete') return res();
   const done=()=>{ pc.removeEventListener('icegatheringstatechange',ck); res(); }, ck=()=>pc.iceGatheringState==='complete'&&done();
@@ -610,7 +643,7 @@ async function createOffer(){
   if (!localStream) return;
   isHost=true; polite=false; makePC(); setupDC(pc.createDataChannel('data',{ordered:true}));
   $('offerLink').value=''; $('offerLink').placeholder='Bağlantı hazırlanıyor…'; setHostStatus('⏳ Bağlantı hazırlanıyor…');
-  await pc.setLocalDescription(await pc.createOffer()); await waitICE();
+  { const o=await pc.createOffer(); o.sdp=fixSdp(o.sdp); await pc.setLocalDescription(o); } await waitICE();
   offerDesc=descOf(); await renderOfferLink();
 }
 async function renderOfferLink(){
@@ -626,7 +659,7 @@ async function createAnswer(text){
     isHost=false; polite=true; makePC();
     $('mkAnswer').textContent='Hazırlanıyor…';
     await pc.setRemoteDescription({type:'offer', sdp:d.s});
-    await pc.setLocalDescription(await pc.createAnswer()); await waitICE();
+    { const a=await pc.createAnswer(); a.sdp=fixSdp(a.sdp); await pc.setLocalDescription(a); } await waitICE();
     answerDesc=descOf(); await renderAnswerLink(); pendingOffer=null;
     $('mkAnswer').textContent='Katıldın ✓';
     try{ await navigator.clipboard.writeText($('answerLink').value); toast('Yanıt bağlantısı kopyalandı'); }catch{}
@@ -681,6 +714,7 @@ function onConnected(){
   showCall(); $('wait') && !remoteMain.getVideoTracks().length && ($('waitTxt').textContent='Bağlandı, görüntü geliyor…');
   if (!startTs){ startTs=Date.now(); timerIv=setInterval(()=>{ const s=Math.floor((Date.now()-startTs)/1000), m=Math.floor(s/60); $('timer').textContent=(m>=60?Math.floor(m/60)+':':'')+String(m%60).padStart(2,'0')+':'+String(s%60).padStart(2,'0'); },1000); beep('join'); toast('Bağlandı 🎉'); playFx('confetti'); }
   applyQuality(); tuneReceivers(); startStats();
+  if(!onConnected.w){ onConnected.w=1; watch(audioTrack,l=>{ spk.me=l>.045&&me.mic; $('tL').classList.toggle('speaking',spk.me); }); }
   navigator.wakeLock?.request('screen').catch(()=>{});
   lockPillUpdate();
 }
@@ -711,6 +745,8 @@ function setupDC(ch){
       case 'snd': playSnd(m.n); break;
       case 'game': gameRecv(m); break;
       case 'booth': booth(false); break;
+      case 'wp': wpRecv(m); break;
+      case 'codec': $('selCodec').value=m.p; applyCodec(m.p); break;
       case 'cap': showCap(peer.name, m.t, m.f); break;
       case 'fmeta': rx={name:m.name,size:m.size,type:m.type,parts:[],got:0,bar:progBubble('⬇ '+m.name+' · '+fmtSize(m.size),false)}; break;
       case 'fend': if(rx){ fileBubble(rx.name, URL.createObjectURL(new Blob(rx.parts,{type:rx.type})), rx.type, false); rx=null; beep('msg'); bumpUnread(); } break;
@@ -722,7 +758,7 @@ async function onSdp(d){
   const collision = d.type==='offer' && (makingOffer || pc.signalingState!=='stable');
   if (!polite && collision) return;
   await pc.setRemoteDescription(d);
-  if (d.type==='offer'){ await pc.setLocalDescription(); send({k:'sdp', d:{type:pc.localDescription.type, sdp:pc.localDescription.sdp}}); }
+  if (d.type==='offer'){ const a=await pc.createAnswer(); a.sdp=fixSdp(a.sdp); await pc.setLocalDescription(a); send({k:'sdp', d:{type:pc.localDescription.type, sdp:pc.localDescription.sdp}}); }
 }
 function sendState(){ send({k:'st', s:{mic:me.mic, cam:me.cam, screen:me.screen, hand:me.hand}}); }
 function syncUI(){
@@ -734,7 +770,7 @@ function syncUI(){
   $('tL').classList.toggle('cover', $('ckCover').checked && !me.screen);
   $('bMic').classList.toggle('off', !me.mic); $('bMic').textContent = me.mic?'🎤':'🔇';
   $('bCam').classList.toggle('off', !me.cam); $('bCam').textContent = me.cam?'📹':'🚫';
-  $('bScr').classList.toggle('on', me.screen); $('bHand').classList.toggle('on', me.hand);
+  $('bScr').classList.toggle('on', me.screen); $('bHand').classList.toggle('on', me.hand); pipSync();
 }
 
 /* ===== Sohbet ===== */
@@ -773,7 +809,8 @@ function toggleCam(){ me.cam=!me.cam; camTrack.enabled=me.cam; syncUI(); sendSta
 function toggleHand(){ me.hand=!me.hand; syncUI(); send({k:'hand',on:me.hand}); if(me.hand) toast('✋ El kaldırdın'); }
 async function toggleScreen(){
   if (screenStream) return stopScreen();
-  let st; try{ st = await navigator.mediaDevices.getDisplayMedia({video:{frameRate:{ideal:30}}, audio:true}); }catch{ return; }
+  let st; try{ const sp=SHARE[$('selShare').value];
+  st = await navigator.mediaDevices.getDisplayMedia({video:{displaySurface:'browser',frameRate:{ideal:sp.fps,max:sp.fps},width:{max:sp.w},height:{max:sp.h}}, audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}, systemAudio:'include', selfBrowserSurface:'exclude', surfaceSwitching:'include', monitorTypeSurfaces:'include'}); }catch{ return; }
   await beginShare(st,false);
 }
 let fileEl=null;
@@ -781,9 +818,9 @@ async function beginShare(st,isFile){
   let vt=st.getVideoTracks()[0];
   if (!vt){ vt=musicTrack(); st=new MediaStream([vt,...st.getAudioTracks()]); }
   screenStream=st; vt.contentHint=isFile?'motion':'detail'; if(!isFile) vt.onended=stopScreen;
-  const at=st.getAudioTracks()[0]; if (at && pc) sAudioSender=pc.addTrack(at,st);
+  const at=st.getAudioTracks()[0]; if (at && pc){ sAudioSender=pc.addTrack(at,st); setTimeout(async()=>{ try{ const p=sAudioSender.getParameters(); if(p.encodings?.length){ p.encodings[0].maxBitrate=128000; p.encodings[0].priority='high'; p.encodings[0].networkPriority='high'; await sAudioSender.setParameters(p); } }catch{} },1500); }
   me.screen=true; await pushVideo(); syncUI(); sendState();
-  toast(isFile?'🎬 Paylaşılıyor, ikiniz de izliyorsunuz':(at?'Ekran + sistem sesi paylaşılıyor':'Ekran paylaşılıyor (ses yok)'));
+  toast(isFile?'🎬 Paylaşılıyor, ikiniz de izliyorsunuz':(at?'Ekran + ses paylaşılıyor 🔊':'Ekran paylaşılıyor, SES YOK. Ses için “Sekme”yi seçip “Sekme sesini paylaş”ı işaretle'));
 }
 function musicTrack(){
   const c=document.createElement('canvas'); c.width=1280; c.height=720; const x=c.getContext('2d'); let k=0;
@@ -909,17 +946,17 @@ $('wbClose').onclick=()=>toggleWB(false);
 function startStats(){
   clearInterval(statIv);
   statIv=setInterval(async()=>{
-    if(!pc) return; const st=await pc.getStats(); let rtt,fps,w,h,lost=0,pk=0,jit,kbps,type='?',lim;
+    if(!pc) return; const st=await pc.getStats(); let rtt,fps,w,h,lost=0,pk=0,jit,kbps,type='?',lim,jb,dec;
     st.forEach(r=>{
       if (r.type==='candidate-pair' && r.nominated && r.state==='succeeded'){ rtt=r.currentRoundTripTime; const lc=st.get(r.localCandidateId); if(lc) type=lc.candidateType==='relay'?'aktarmalı':lc.candidateType==='host'?'yerel ağ':'doğrudan P2P'; }
-      if (r.type==='inbound-rtp' && r.kind==='video'){ fps=r.framesPerSecond; w=r.frameWidth; h=r.frameHeight; lost=r.packetsLost; pk=r.packetsReceived; jit=r.jitter; if(lastT) kbps=Math.round((r.bytesReceived-lastB)*8/(r.timestamp-lastT)); lastB=r.bytesReceived; lastT=r.timestamp; }
+      if (r.type==='inbound-rtp' && r.kind==='video'){ fps=r.framesPerSecond; w=r.frameWidth; h=r.frameHeight; lost=r.packetsLost; pk=r.packetsReceived; jit=r.jitter; jb=r.jitterBufferEmittedCount?r.jitterBufferDelay/r.jitterBufferEmittedCount*1000:null; dec=r.framesDecoded?r.totalDecodeTime/r.framesDecoded*1000:null; if(lastT) kbps=Math.round((r.bytesReceived-lastB)*8/(r.timestamp-lastT)); lastB=r.bytesReceived; lastT=r.timestamp; }
       if (r.type==='outbound-rtp' && r.kind==='video') lim=r.qualityLimitationReason;
     });
     const dl=lost-lastLost, dp=pk-lastPk, loss=dp+dl>0?dl/(dp+dl):0; lastLost=lost; lastPk=pk;
     const lvl = rtt==null?0 : (rtt<.08&&loss<.01)?4 : (rtt<.16&&loss<.03)?3 : (rtt<.3&&loss<.08)?2 : 1;
     $('bars').className='bars'+(lvl?' l'+lvl:'');
     if (!$('hud').classList.contains('hidden')) $('hud').textContent =
-      'Gecikme (RTT): '+(rtt!=null?Math.round(rtt*1000)+' ms':'-')+'\nÇözünürlük: '+(w?w+'×'+h:'-')+' @'+(fps?Math.round(fps):'-')+' fps\nGelen: '+(kbps??'-')+' kbps · Kayıp: '+(lost??'-')+'\nJitter: '+(jit!=null?Math.round(jit*1000)+' ms':'-')+'\nYol: '+type+(lim&&lim!=='none'?'\nSınırlama: '+lim:'');
+      'Gecikme (RTT): '+(rtt!=null?Math.round(rtt*1000)+' ms':'-')+'\nÇözünürlük: '+(w?w+'×'+h:'-')+' @'+(fps?Math.round(fps):'-')+' fps\nGelen: '+(kbps??'-')+' kbps · Kayıp: '+(lost??'-')+'\nJitter: '+(jit!=null?Math.round(jit*1000)+' ms':'-')+' · Tampon: '+(jb!=null?Math.round(jb)+' ms':'-')+' · Çözme: '+(dec!=null?dec.toFixed(1)+' ms':'-')+'\nYol: '+type+(lim&&lim!=='none'?'\nSınırlama: '+lim:'');
   },1000);
 }
 async function secCode(){
@@ -938,7 +975,7 @@ $('lockPill').onclick=async()=>{
 };
 
 /* ===== Menü / panel ===== */
-const MORE=[['flip','🔄','Kamerayı çevir'],['layout','▦','Düzeni değiştir (L)'],['rec','⏺','Kaydı başlat'],['snap','📸','Fotoğraf çek'],['caps','📝','Canlı altyazı'],['hud','📊','İstatistikler'],['pip','🗗','Küçük pencere (PiP)'],['fs','⛶','Tam ekran (F)'],['sec','🔐','Güvenlik kodu']];
+const MORE=[['flip','🔄','Kamerayı çevir'],['layout','▦','Düzeni değiştir (L)'],['rec','⏺','Kaydı başlat'],['snap','📸','Fotoğraf çek'],['caps','📝','Canlı altyazı'],['hud','📊','İstatistikler'],['pip','🗗','Küçük pencere (PiP)'],['fs','⛶','Tam ekran (F)'],['wp','🌐','Ortak site / video'],['float','🪟','Yüzen görüşme penceresi'],['sec','🔐','Güvenlik kodu']];
 function updateMore(){
   $('more').innerHTML=''; MORE.forEach(([id,ic,tx])=>{
     const b=document.createElement('button'); b.dataset.a=id;
@@ -949,7 +986,7 @@ function updateMore(){
 $('more').onclick=async e=>{
   const a=e.target.closest('button')?.dataset.a; if(!a) return; $('more').classList.add('hidden');
   if(a==='flip') switchCam(); if(a==='layout') cycleLayout(); if(a==='rec') toggleRec(); if(a==='snap') snap(); if(a==='caps') toggleCaps();
-  if(a==='hud'){ $('hud').classList.toggle('hidden'); } if(a==='sec') $('lockPill').click(); if(a==='fs') toggleFs();
+  if(a==='hud'){ $('hud').classList.toggle('hidden'); } if(a==='sec') $('lockPill').click(); if(a==='float') floatCall(); if(a==='wp'){ showTab('fun'); setTimeout(()=>$('wpUrl').focus(),120); } if(a==='fs') toggleFs();
   if(a==='pip'){ try{ document.pictureInPictureElement ? await document.exitPictureInPicture() : await $('remote').requestPictureInPicture(); }catch{ toast('Bu tarayıcı desteklemiyor'); } }
 };
 const toggleFs=()=>document.fullscreenElement?document.exitFullscreen():$('call').requestFullscreen?.();
@@ -1203,6 +1240,157 @@ $('pPlay').onclick=()=>{ if(!fileEl) return; fileEl.paused?fileEl.play():fileEl.
 $('pSeek').oninput=e=>{ if(fileEl?.duration) fileEl.currentTime=e.target.value/1000*fileEl.duration; };
 $('pStop').onclick=()=>stopScreen();
 $('bFun').onclick=()=>{ $('emojibar').classList.add('hidden'); $('more').classList.add('hidden'); openDrawer('fun'); };
+
+
+/* ===== Ortak site / birlikte izle ===== */
+const spk={me:false,peer:false};
+const wp={on:false,owner:false,kind:null,ad:null,until:0,vol:1,cur:1,sent:-1,saved:null,tick:null,duck:null,url:''};
+const wpMute=ms=>{ wp.until=performance.now()+ms; }, wpEmit=(a,t)=>{ if(performance.now()<wp.until||wp.ad?.live) return; send({k:'wp',a,t}); };
+function showTab(t){ const d=$('drawer'); if(d.classList.contains('hidden')||document.querySelector('#dtabs .on').dataset.tab!==t) openDrawer(t); }
+function wpKind(u){
+  let x; try{ x=new URL(u); }catch{ return null; } if(!/^https?:$/.test(x.protocol)) return null;
+  const h=x.hostname.replace(/^(www|m|music)\./,'');
+  if(h==='youtu.be') return {k:'yt',id:x.pathname.slice(1).split('/')[0],url:u};
+  if(h==='youtube.com'){
+    const id=x.searchParams.get('v')||(x.pathname.match(/^\/(?:shorts|embed|live)\/([\w-]{6,})/)||[])[1]; if(id) return {k:'yt',id,url:u};
+    const ch=x.pathname.match(/^\/channel\/(UC[\w-]{20,})/); if(ch) return {k:'frame',url:'https://www.youtube.com/embed/live_stream?channel='+ch[1]+'&playsinline=1',orig:u,live:true};
+  }
+  if(h==='twitch.tv'){ const m=x.pathname.match(/^\/([\w]{3,25})\/?$/); if(m) return {k:'frame',url:`https://player.twitch.tv/?channel=${m[1]}&parent=${location.hostname||'localhost'}&muted=false`,orig:u,live:true}; }
+  if(/\.m3u8$/i.test(x.pathname)) return {k:'hls',url:u};
+  if(/\.(mp4|webm|ogv|ogg|mov|m4v|mp3|wav|m4a|aac|flac)$/i.test(x.pathname)) return {k:'media',url:u};
+  if(h==='vimeo.com'){ const m=x.pathname.match(/\/(\d+)/); if(m) return {k:'frame',url:'https://player.vimeo.com/video/'+m[1],orig:u}; }
+  if(h==='dailymotion.com'){ const m=x.pathname.match(/\/video\/([\w]+)/); if(m) return {k:'frame',url:'https://www.dailymotion.com/embed/video/'+m[1],orig:u}; }
+  return {k:'frame',url:u};
+}
+function mediaAdapter(url,noSrc){
+  const el=document.createElement('video'); if(!noSrc) el.src=url; el.controls=true; el.playsInline=true; el.preload='auto'; el.style.cssText='width:100%;height:100%;background:#000';
+  el.onplay=()=>wpEmit('play',el.currentTime); el.onpause=()=>{ if(!el.ended) wpEmit('pause',el.currentTime); }; el.onseeked=()=>wpEmit('seek',el.currentTime);
+  el.onerror=()=>{ if(!noSrc) toast('Video yüklenemedi (adres doğrudan bir medya dosyası olmalı)'); };
+  return {el, play:()=>el.play().catch(()=>toast('Oynatmak için ▶’e bas')), pause:()=>el.pause(), seek:t=>{ try{ el.currentTime=t; }catch{} }, time:()=>el.currentTime, playing:()=>!el.paused, setVol:v=>{ el.volume=Math.min(1,Math.max(0,v)); }, destroy:()=>{ el.pause(); el.removeAttribute('src'); el.load(); }};
+}
+let hlsP=null;
+const hlsLoad=()=>hlsP ||= new Promise((res,rej)=>{ if(window.Hls) return res(); const sc=document.createElement('script'); sc.src='https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js'; sc.onload=()=>res(); sc.onerror=()=>{ hlsP=null; rej(); }; document.head.append(sc); });
+function hlsAdapter(url){
+  const ad=mediaAdapter(url,true), el=ad.el, native=el.canPlayType('application/vnd.apple.mpegurl'); ad.live=false;
+  const fail=()=>{ $('wpNote').textContent='Yayın bu tarayıcıdan oynatılamadı (yayın sunucusu başka sitelerden oynatmaya izin vermiyor olabilir). Aşağıdaki seçeneklerden birini dene.'; $('wpAlt').classList.remove('hidden'); };
+  const markLive=()=>{ ad.live=true; $('wpLive').classList.remove('hidden'); $('wpNote').textContent='🔴 Canlı yayın: herkes kendi cihazında canlı izler, bu yüzden eşitleme gerekmez (birkaç sn fark olabilir). “⏭ Canlıya” ile en güncel ana geçebilirsin.'; };
+  hlsLoad().then(()=>{
+    if(window.Hls?.isSupported()){
+      const h=new Hls({lowLatencyMode:true,liveSyncDurationCount:2,liveMaxLatencyDurationCount:6,maxBufferLength:12}); ad.hls=h;
+      h.on(Hls.Events.LEVEL_LOADED,(_,d)=>{ if(d.details.live&&!ad.live) markLive(); });
+      h.on(Hls.Events.MANIFEST_PARSED,()=>el.play().catch(()=>{}));
+      h.on(Hls.Events.ERROR,(_,d)=>{ if(d.fatal){ if(d.type===Hls.ErrorTypes.MEDIA_ERROR) try{ h.recoverMediaError(); }catch{ fail(); } else fail(); } });
+      h.loadSource(url); h.attachMedia(el);
+    } else if(native){ el.src=url; el.onloadedmetadata=()=>{ if(!isFinite(el.duration)) markLive(); }; el.play().catch(()=>{}); } else fail();
+  }).catch(()=>{ if(native){ el.src=url; el.onloadedmetadata=()=>{ if(!isFinite(el.duration)) markLive(); }; el.play().catch(()=>{}); } else fail(); });
+  ad.destroy=()=>{ try{ ad.hls?.destroy(); }catch{} el.pause(); el.removeAttribute('src'); el.load(); };
+  ad.goLive=()=>{ if(ad.hls?.liveSyncPosition) el.currentTime=ad.hls.liveSyncPosition; else if(isFinite(el.duration)) el.currentTime=el.duration; el.play().catch(()=>{}); };
+  return ad;
+}
+function frameAdapter(url){
+  const f=document.createElement('iframe'); f.src=url; f.setAttribute('allow','autoplay; fullscreen; picture-in-picture; encrypted-media; clipboard-write'); f.setAttribute('referrerpolicy','no-referrer');
+  f.setAttribute('sandbox','allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-presentation allow-pointer-lock allow-top-navigation-by-user-activation');
+  return {el:f, play(){}, pause(){}, seek(){}, time:()=>0, playing:()=>false, setVol(){}, destroy:()=>{ f.src='about:blank'; }};
+}
+let ytP=null;
+const ytLoad=()=>ytP ||= new Promise((res,rej)=>{ if(window.YT?.Player) return res(); const sc=document.createElement('script'); sc.src='https://www.youtube.com/iframe_api'; window.onYouTubeIframeAPIReady=()=>res(); sc.onerror=()=>{ ytP=null; rej(); }; document.head.append(sc); setTimeout(()=>{ if(!window.YT?.Player){ ytP=null; rej(); } },8000); });
+function ytAdapter(id){
+  const box=document.createElement('div'), mount=document.createElement('div'); box.append(mount);
+  let pl=null, ok=false, queue=[], last={t:0,at:0,playing:false}, poll, dead=false;
+  const q=f=>ok?f():queue.push(f);
+  const ad={el:box, play:()=>q(()=>pl.playVideo()), pause:()=>q(()=>pl.pauseVideo()), seek:t=>{ q(()=>pl.seekTo(t,true)); last={t,at:performance.now(),playing:last.playing}; },
+    time:()=>ok?pl.getCurrentTime():0, playing:()=>ok&&pl.getPlayerState()===1, setVol:v=>q(()=>pl.setVolume(Math.round(v*100))), destroy:()=>{ dead=true; clearInterval(poll); try{ pl.destroy(); }catch{} }};
+  ytLoad().then(()=>{
+    if(dead) return;
+    pl=new YT.Player(mount,{videoId:id,width:'100%',height:'100%',playerVars:{playsinline:1,rel:0,modestbranding:1,...(/^https?:/.test(location.protocol)?{origin:location.origin}:{})},events:{
+      onReady:()=>{ ok=true; const f=box.querySelector('iframe'); if(f) f.style.cssText='width:100%;height:100%;border:0'; queue.forEach(f=>f()); queue=[]; },
+      onStateChange:e=>{ const t=pl.getCurrentTime(); if(e.data===1){ last={t,at:performance.now(),playing:true}; wpEmit('play',t); } if(e.data===2){ last={t,at:performance.now(),playing:false}; wpEmit('pause',t); } }}});
+    poll=setInterval(()=>{ if(!ok) return; const st=pl.getPlayerState(), t=pl.getCurrentTime(), now=performance.now(), exp=last.playing?last.t+(now-last.at)/1000:last.t;
+      if(st!==3&&st!==-1&&Math.abs(t-exp)>2) wpEmit('seek',t); last={t,at:now,playing:st===1}; },500);
+  }).catch(()=>{ box.innerHTML=''; const f=document.createElement('iframe'); f.src='https://www.youtube.com/embed/'+id+'?playsinline=1'; f.setAttribute('allow','autoplay; fullscreen; encrypted-media'); f.style.cssText='width:100%;height:100%;border:0'; box.append(f); $('wpNote').textContent='YouTube eşitleme servisi yüklenemedi (çevrimdışı ya da yerel dosya?). Video açıldı ama oynat/duraklat eşitlenmez.'; });
+  return ad;
+}
+function wpLayout(on){
+  const st=$('stage'), L=['pip','split','swap'];
+  if(on){ wp.saved=L.find(l=>st.classList.contains(l))||'pip'; st.classList.remove(...L); st.classList.add('pip','wp'); [$('tL'),$('tR')].forEach(t=>{ t.style.left=t.style.top=t.style.right=t.style.bottom=''; t.classList.remove('mini'); }); }
+  else { st.classList.remove('wp',...L); st.classList.add(wp.saved||'pip'); [$('tL'),$('tR')].forEach(t=>t.classList.remove('mini')); if((wp.saved||'pip')==='pip') $('tL').classList.add('mini'); if(wp.saved==='swap') $('tR').classList.add('mini'); }
+}
+function wpOpenLocal(info,owner){
+  wpClose(false); wp.on=true; wp.owner=owner; wp.kind=info.k; wp.url=info.orig||info.url||('https://youtu.be/'+info.id);
+  const ad=info.k==='yt'?ytAdapter(info.id):info.k==='media'?mediaAdapter(info.url):info.k==='hls'?hlsAdapter(info.url):frameAdapter(info.url); wp.ad=ad;
+  $('wpBody').innerHTML=''; $('wpBody').append(ad.el);
+  $('wpTitle').textContent=info.k==='yt'?'▶ YouTube':info.k==='media'?'🎞 Video':info.k==='hls'?'🔴 Canlı yayın / HLS':'🌐 '+new URL(info.url).hostname;
+  $('wpNote').textContent=info.k==='frame'?(info.live?'🔴 Canlı yayın: herkes kendi cihazında izler, eşitleme gerekmez.':'Bu site için oynatma/kaydırma eşitlenemez; ikiniz de aynı sayfayı açarsınız. Boş görünüyorsa site gömülmeye izin vermiyordur, aşağıdaki seçenekleri kullan.'):'';
+  if(info.k==='frame') $('wpAlt').classList.remove('hidden');
+  $('wpLive').onclick=()=>ad.goLive?.();
+  $('wp').classList.remove('hidden'); wpLayout(true); resizeWB(); wp.cur=wp.vol; wp.sent=-1;
+  wp.tick=setInterval(()=>{ if(wp.owner&&wp.ad?.playing()&&!wp.ad.live) send({k:'wp',a:'tick',t:wp.ad.time()}); },2000);
+  wp.duck=setInterval(()=>{ if(!wp.ad) return; const tgt=$('wpDuck').checked&&(spk.me||spk.peer)?wp.vol*.25:wp.vol; wp.cur+=(tgt-wp.cur)*.35; if(Math.abs(wp.cur-wp.sent)>.01){ wp.sent=wp.cur; wp.ad.setVol(wp.cur); } },150);
+}
+function wpClose(announce){
+  if(!wp.on) return; clearInterval(wp.tick); clearInterval(wp.duck); try{ wp.ad?.destroy(); }catch{} wp.ad=null; wp.on=false;
+  $('wpBody').innerHTML=''; $('wp').classList.add('hidden'); $('wpAlt').classList.add('hidden'); $('wpLive').classList.add('hidden'); $('wpNote').textContent=''; wpLayout(false); resizeWB(); if(announce) send({k:'wp',a:'close'});
+}
+function wpAsk(m){
+  const info=wpKind(m.url); if(!info){ send({k:'wp',a:'deny'}); return; }
+  const frame=info.k==='frame', md=document.createElement('div'); md.className='modal';
+  md.innerHTML=`<div class="card"><h3>🌐 Ortak ${frame?'site':info.k==='hls'?'canlı yayın':'video'}</h3><p class="note" style="margin:8px 0">${esc(peer.name)} birlikte açmak istiyor:</p><p style="word-break:break-all;font-size:13px">${esc(m.url)}</p>
+   <div class="row" style="justify-content:center;margin-top:16px"><button class="btn" data-x="n">Reddet</button>${frame?'<button class="btn" data-x="t">🪟 Kendi sekmemde aç</button>':''}<button class="btn pri" data-x="y">${frame?'Burada göm':'Aç'}</button></div></div>`;
+  md.onclick=async e=>{ const x=e.target.dataset?.x; if(!x) return; md.remove(); if(x==='y') wpOpenLocal(info,false); else if(x==='t'){ await floatCall(); window.open(info.orig||info.url,'_blank','noopener'); } else send({k:'wp',a:'deny'}); };
+  document.body.append(md); beep('hand');
+}
+function wpRecv(m){
+  if(m.a==='open') return wpAsk(m);
+  if(m.a==='deny'){ toast(peer.name+' reddetti'); wpClose(false); return; }
+  if(m.a==='close'){ if(wp.on){ wpClose(false); toast(peer.name+' ortak oturumu kapattı'); } return; }
+  if(!wp.on||!wp.ad||wp.ad.live) return;
+  if(m.a==='tick'){ if(Math.abs(wp.ad.time()-m.t)>1.2){ wpMute(1200); wp.ad.seek(m.t+.05); } else if(!wp.ad.playing()){ wpMute(1200); wp.ad.play(); } return; }
+  wpMute(1200);
+  if(m.a==='play'){ wp.ad.seek(m.t); wp.ad.play(); }
+  else if(m.a==='pause'){ wp.ad.pause(); wp.ad.seek(m.t); }
+  else if(m.a==='seek'){ wp.ad.seek(m.t); }
+  else if(m.a==='sync'){ wp.ad.seek(m.t); m.p?wp.ad.play():wp.ad.pause(); }
+}
+$('wpGo').onclick=()=>{
+  let u=$('wpUrl').value.trim(); if(!u) return; if(!/^https?:\/\//i.test(u)) u='https://'+u; const info=wpKind(u);
+  if(!info){ toast('Geçersiz adres'); return; } if(!ready){ toast('Önce görüşme bağlanmalı'); return; }
+  send({k:'wp',a:'open',url:u}); wpOpenLocal(info,true); toast('Karşı tarafa soruldu…');
+};
+$('wpUrl').onkeydown=e=>{ if(e.key==='Enter') $('wpGo').click(); };
+$('wpX').onclick=()=>wpClose(true);
+$('wpSync').onclick=()=>{ if(wp.ad){ send({k:'wp',a:'sync',t:wp.ad.time(),p:wp.ad.playing()}); toast('Eşitlendi'); } };
+$('wpExt').onclick=()=>window.open(wp.url,'_blank','noopener');
+$('wpVol').oninput=e=>{ wp.vol=+e.target.value; };
+$('selShare').value=store.get('share','ultra'); $('selShare').onchange=()=>{ store.set('share',$('selShare').value); applyQuality(); toast('Ekran profili: '+$('selShare').selectedOptions[0].textContent); };
+$('selCodec').onchange=()=>{ applyCodec($('selCodec').value); send({k:'codec',p:$('selCodec').value}); };
+
+
+/* ===== Yüzen görüşme penceresi (Document PiP) ===== */
+let pipWin=null;
+function pipSync(){ if(!pipWin) return; const d=pipWin.document, m=d.getElementById('fMic'), c=d.getElementById('fCam'); if(m){ m.textContent=me.mic?'🎤':'🔇'; m.classList.toggle('off',!me.mic); } if(c){ c.textContent=me.cam?'📹':'🚫'; c.classList.toggle('off',!me.cam); } }
+async function floatCall(){
+  if(pipWin){ pipWin.close(); return; }
+  if(!('documentPictureInPicture' in window)){ try{ await $('remote').requestPictureInPicture(); toast('Küçük pencere açıldı (bu tarayıcıda yalnızca karşı tarafın görüntüsü)'); }catch{ toast('Bu tarayıcı yüzen pencereyi desteklemiyor'); } return; }
+  let w; try{ w=await documentPictureInPicture.requestWindow({width:340,height:560}); }catch{ toast('Yüzen pencere açılamadı'); return; }
+  pipWin=w; window._pipDoc=w.document;
+  [...document.styleSheets].forEach(ss=>{ try{ const st=w.document.createElement('style'); st.textContent=[...ss.cssRules].map(r=>r.cssText).join('\n'); w.document.head.append(st); }catch{} });
+  w.document.documentElement.style.height='100%';
+  const b=w.document.body; b.style.cssText='margin:0;height:100%;display:flex;flex-direction:column;gap:6px;padding:6px;background:#07080d;overflow:hidden';
+  const tR=$('tR'), tL=$('tL');
+  tR.style.cssText='position:relative;flex:2;min-height:0;inset:auto;width:auto;height:auto;aspect-ratio:auto;z-index:auto';
+  tL.style.cssText='position:relative;flex:1;min-height:0;inset:auto;width:auto;height:auto;aspect-ratio:auto;z-index:auto;cursor:default';
+  const bar=w.document.createElement('div'); bar.style.cssText='display:flex;gap:10px;justify-content:center;padding:2px 0 4px';
+  const mk=(id,txt,fn)=>{ const x=w.document.createElement('button'); x.id=id; x.className='rb'; x.textContent=txt; x.style.cssText='width:44px;height:44px;font-size:19px'; x.onclick=fn; bar.append(x); };
+  mk('fMic','🎤',toggleMic); mk('fCam','📹',toggleCam); mk('fHand','✋',toggleHand); mk('fBack','⬅️',()=>w.close());
+  b.append(tR,tL,bar); $('remote').play?.().catch(()=>{}); $('local').play?.().catch(()=>{}); pipSync();
+  w.addEventListener('pagehide',()=>{
+    $('stage').prepend(tR,tL); tR.style.cssText=''; tL.style.cssText=''; window._pipDoc=null; pipWin=null;
+    $('remote').play?.().catch(()=>{}); $('local').play?.().catch(()=>{});
+  });
+  toast('🪟 Görüşme yüzen pencerede. Siteyi açıp izleyebilirsin.');
+}
+$('wpTab').onclick=async()=>{ await floatCall(); window.open(wp.url,'_blank','noopener'); };
+$('wpShareTab').onclick=async()=>{ toast('Önce siteyi ↗ ile sekmede aç, sonra sekmeyi seçip “Sekme sesini paylaş”ı işaretle'); if(!screenStream) await toggleScreen(); };
 
 /* ===== Olaylar ===== */
 $('camBtn').onclick=openMedia;
